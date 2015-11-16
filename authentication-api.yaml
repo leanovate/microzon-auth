@@ -1,0 +1,232 @@
+swagger: '2.0'
+info:
+  title: Microzon Authentication
+  description: Authentication service for a bunch of services
+  version: 1.0.0
+host: microzon.leanovate.de
+schemes:
+  - https
+basePath: /v1
+produces:
+  - application/json
+paths:
+  /tokens:
+    post:
+      summary: Create a new authentication token
+      description: |
+        This will create an authentication token.
+        It will implicitly create a cookie containing the token.
+        If there already is one, it will be reused.
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/LoginData'
+      tags:
+        - Tokens
+      responses:
+        '201':
+          description: 'Successfully created a token'
+          schema:
+            $ref: '#/definitions/TokenInfo'
+        '400':
+          description: 'Provided login data is invalid'
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: 'Provided login data can not be verified (e.g. wrong username/password'
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: 'Any other error'
+          schema:
+            $ref: '#/definitions/Error'
+  /token/{token}:
+    get:
+      summary: Get information the content and validity of a token.
+      parameters:
+        - name: token
+          in: path
+          type: string
+          required: true
+          description: Raw token
+      tags:
+        - Tokens
+      responses:
+        '200':
+          description: 'Token is valid'
+          schema:
+            $ref: '#/definitions/TokenInfo'
+        '404':
+          description: 'Token does not exists (i.e. it is invalid)'
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: 'Any other error'
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Invalidate/revoke a token
+      parameters:
+        - name: token
+          in: path
+          type: string
+          required: true
+          description: Raw token
+      tags:
+        - Tokens
+      responses:
+        '204':
+          description: 'Token successfully revoked'
+        default:
+          description: 'Any other error'
+          schema:
+            $ref: '#/definitions/Error'
+  /certificates:
+    get:
+      summary: 'List all certificates used for signing of tokens'
+      tags:
+        - Certificates
+      responses:
+        '200':
+          description: 'List of all certificates'
+          schema:
+            $ref: '#/definitions/CertificateList'
+        default:
+          description: 'Any other error'
+          schema:
+            $ref: '#/definitions/Error'
+  /certificates/{ski}:
+    get:
+      summary: 'Get a certificate by its subject key identifier'
+      parameters:
+        - name: ski
+          in: path
+          required: true
+          type: string
+      tags:
+        - Certificates
+      produces:
+        - application/x-pem-file
+      responses:
+        '200':
+          description: 'PEM-encoded certificate'
+        '404':
+          description: 'Cerficate not found'
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: 'Any other error'
+          schema:
+            $ref: '#/definitions/Error'
+  /revocations:
+    get:
+      summary: 'Get the SHA-256 hashes of all revoked tokens'
+      parameters:
+        - name: wait
+          in: query
+          type: boolean
+          description: 'Wait for a change (long polling)'
+        - name: since_version
+          in: query
+          type: integer
+          format: int64
+          description: 'Only get the changes since previous version'
+      responses:
+        '200':
+          description: 'Revokation list'
+          schema:
+            $ref: '#/definitions/RevokationList'
+        default:
+          description: 'Any other error'
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  LoginData:
+    description: |
+      Contains information how to authenticate a user to the system.
+      If no credentials are provided at all an anonymous session will
+      be created
+    type: object
+    properties:
+      username_password:
+        $ref: '#/definitions/UsernamePasswordCredentials'
+  UsernamePasswordCredentials:
+    description: |
+      Provide username and password for authentication.
+      Most simple way to transfer credentials, unluckily also the most
+      insecure. Only use this with tight TLS.
+    type: object
+    required:
+      - username
+      - password
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+  TokenInfo:
+    type: object
+    required:
+      - raw
+      - uid
+      - realm
+      - scope
+      - expiresAt
+    properties:
+      raw:
+        type: string
+      uid:
+        type: string
+      realm:
+        type: string
+      scope:
+        type: array
+        items:
+          type: string
+      expiresAt:
+        type: integer
+        format: int32
+  CertificateList:
+    description: |
+      Contains all PEM-encoded certificate by their subject key identifier.
+    type: object
+    additionalProperties:
+      type: string
+  RevokationList:
+    type: object
+    required:
+      - version
+      - revokations
+    properties:
+      version:
+        type: integer
+        format: int64
+      revokations:
+        type: array
+        items:
+          $ref: '#/definitions/Revokation'
+  Revokation:
+    type: object
+    required:
+      - sha256
+      - expiresAt
+    properties:
+      sha256:
+        type: string
+      expiresAt:
+        type: integer
+        format: int32
+  Error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      details:
+        type: string

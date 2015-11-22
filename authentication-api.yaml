@@ -112,20 +112,22 @@ paths:
           description: 'List of all certificates'
           schema:
             type: array
-            items: 
+            items:
               $ref: '#/definitions/Certificate'
         default:
           description: 'Any other error'
           schema:
             $ref: '#/definitions/Error'
-  /certificates/{ski}:
+  /certificates/{x5t}:
     get:
       summary: 'Get a certificate by its subject key identifier'
       parameters:
-        - name: ski
+        - name: x5t
           in: path
           required: true
           type: string
+          description: |
+            x.509 certificate thumbprint: base64url encoded SHA-256 of DER encoded certificate
       tags:
         - Certificates
       responses:
@@ -163,7 +165,7 @@ paths:
           description: 'Any other error'
           schema:
             $ref: '#/definitions/Error'
-      tags: 
+      tags:
         - Revocation
 definitions:
   LoginData:
@@ -195,7 +197,7 @@ definitions:
       - raw
       - sub
       - exp
-      - ski
+      - x5t
       - sha256
     properties:
       raw:
@@ -208,9 +210,10 @@ definitions:
       sub:
         type: string
         description: user identification
-      ski:
+      x5t:
         type: string
-        description: subject key identifier of Certificate
+        description: |
+          x.509 certificate thumbprint: base64url encoded SHA-256 of DER encoded certificate
       sha256:
         type: string
         description: base64 of SHA256 of raw token
@@ -222,13 +225,15 @@ definitions:
       Contains one PEM-encoded certificate by its subject key identifier.
     type: object
     required:
-      - ski
+      - x5t
       - expires_at
       - certificate
       - public_key
     properties:
-      ski:
+      x5t:
         type: string
+        description: |
+          x.509 certificate thumbprint: base64url encoded SHA-256 of DER encoded certificate
       expires_at:
         type: integer
         format: int64

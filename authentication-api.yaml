@@ -158,9 +158,9 @@ paths:
           description: 'Only get the changes since previous version'
       responses:
         '200':
-          description: 'Revokation list'
+          description: 'Revocation list'
           schema:
-            $ref: '#/definitions/RevokationList'
+            $ref: '#/definitions/RevocationList'
         default:
           description: 'Any other error'
           schema:
@@ -243,20 +243,20 @@ definitions:
       public_key:
         type: string
         description:  PEM encoded
-  RevokationList:
+  RevocationList:
     type: object
     required:
       - version
-      - revokations
+      - revocations
     properties:
       version:
         type: integer
         format: int64
-      revokations:
+      revocations:
         type: array
         items:
-          $ref: '#/definitions/Revokation'
-  Revokation:
+          $ref: '#/definitions/Revocation'
+  Revocation:
     type: object
     required:
       - sha256

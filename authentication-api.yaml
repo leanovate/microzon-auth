@@ -156,6 +156,11 @@ paths:
           type: integer
           format: int64
           description: 'Only get the changes since previous version'
+        - name: timeout
+          in: query
+          type: integer
+          format: int32
+          description: 'Timeout for wait in seconds'
       responses:
         '200':
           description: 'Revocation list'

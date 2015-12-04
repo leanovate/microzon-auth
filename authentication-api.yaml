@@ -172,6 +172,24 @@ paths:
             $ref: '#/definitions/Error'
       tags:
         - Revocation
+  /revocations/stream:
+    get:
+      summary: 'Stream revocations'
+      description: |
+        Stream revocations as they come in. This will keep the tcp connection open
+        as long as the client does not closes it. The output will not be a valid json,
+        instead there will be one revokation json per line.
+      parameters:
+        - name: since_version
+          in: query
+          type: integer
+          format: int64
+          description: 'Only get the changes since previous version'
+      responses:
+        '200':
+          description: 'Revocation'
+          schema:
+            $ref: '#/definitions/Revocation'
 definitions:
   LoginData:
     description: |
@@ -200,6 +218,7 @@ definitions:
     type: object
     required:
       - raw
+      - id
       - sub
       - exp
       - x5t
@@ -208,6 +227,10 @@ definitions:
       raw:
         type: string
         description: JWT Token
+      id:
+        type: string
+        format: uuid
+        description: Token id
       exp:
         type: integer
         format: int64
@@ -251,10 +274,10 @@ definitions:
   RevocationList:
     type: object
     required:
-      - version
+      - last_version
       - revocations
     properties:
-      version:
+      last_version:
         type: integer
         format: int64
       revocations:
@@ -264,9 +287,13 @@ definitions:
   Revocation:
     type: object
     required:
+      - version
       - sha256
       - expires_at
     properties:
+      version:
+        type: integer
+        format: int64
       sha256:
         type: string
         description: the base64 SHA256 of the raw token
